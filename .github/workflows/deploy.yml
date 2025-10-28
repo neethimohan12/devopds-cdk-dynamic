@@ -72,6 +72,6 @@ jobs:
           elif [ "$ACTION" == "destroy" ]; then
             DEPLOY_ENV=$DEPLOY_ENV npx cdk destroy --require-approval never
           else
-            echo "Invalid action: $ACTION
+            echo "Invalid action: $ACTION"
             exit 1
           fi
