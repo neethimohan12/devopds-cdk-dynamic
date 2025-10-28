@@ -1,0 +1,73 @@
+name: Deploy CDK
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "CDK action Choose the action: deploy or destroy"
+        required: true
+        default: "deploy"
+        type: choice
+        options:
+          - deploy
+          - destroy
+      deploy_env:
+        description: "Environment to Deploy (e.g., dev, test , prod)"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - test
+          - prod
+
+permissions:
+  id-token: write # Allow the workflow to request OIDC tokens.
+  contents: read # Allow the workflow to read repository contents
+
+jobs:
+  cdk-deploy:
+    runs-on: ubuntu-latest # Use the latest Ubuntu runner
+    defaults:
+      run: working-directory:genai # Set the working directory to where your CDK app is located
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # Step 2: Set up AWS credentials for Terraform (you can store this in GitHub Secrets)
+      - name: Configure AWS credentials from I AM Role
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # Step 3: Set up CDK
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20 # Specify the Node.js version you want to use
+
+      - name: Install CDK and dependencies
+        run: |
+          npm ci
+          npm install -g aws-cdk
+
+      - name: CDK Bootstrapping (if needed)
+        run: cdk bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/${{ secrets.AWS_REGION }}
+
+      - name: CDK Synth
+        run: |
+          DEPLOY_ENV=${{ github.event.inputs.deploy_env }} npx cdk synth
+
+      - name: CDK Deploy or Destroy
+        run: |
+          if [ "${{ github.event.inputs.action }}" == "deploy" ]; then
+            DEPLOY_ENV=${{ github.event.inputs.deploy_env }} npx cdk deploy --require-approval never
+          elif [ "${{ github.event.inputs.action }}" == "destroy" ]; then
+            DEPLOY_ENV=${{ github.event.inputs.deploy_env }} npx cdk destroy --require-approval never
+          else
+            echo "Invalid action: ${{ github.event.inputs.action }}"
+            exit 1
+          fi
