@@ -70,7 +70,7 @@ jobs:
           if [ "$ACTION" == "deploy" ]; then
             DEPLOY_ENV=$DEPLOY_ENV npx cdk deploy --require-approval never
           elif [ "$ACTION" == "destroy" ]; then
-            DEPLOY_ENV=$DEPLOY_ENV npx cdk destroy --require-approval never
+            DEPLOY_ENV=$DEPLOY_ENV npx cdk destroy --require-approval never --force  # Added --force flag
           else
             echo "Invalid action: $ACTION"
             exit 1
