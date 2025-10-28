@@ -29,7 +29,8 @@ jobs:
   cdk-deploy:
     runs-on: ubuntu-latest # Use the latest Ubuntu runner
     defaults:
-      run: working-directory:genai # Set the working directory to where your CDK app is located
+      run:
+        working-directory: genai
 
     steps:
       # Step 1: Checkout the repository
